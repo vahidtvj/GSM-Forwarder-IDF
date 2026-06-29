@@ -1,0 +1,97 @@
+menu "Modem Configuration"
+
+    config MODEM_BAUDRATE
+        int "Modem UART baud rate"
+        default 115200
+        help
+            Communication speed between ESP32 and modem.
+
+    config MODEM_TX_PIN
+        int "Modem TX pin (ESP32 -> Modem)"
+        range 0 39
+        default 26
+        help
+            GPIO for UART TX.
+
+    config MODEM_RX_PIN
+        int "Modem RX pin (Modem -> ESP32)"
+        range 0 39
+        default 27
+        help
+            GPIO for UART RX.
+
+    config MODEM_DTR_PIN
+        int "Modem DTR pin (Data Terminal Ready)"
+        range -1 39
+        default 25
+        help
+            GPIO for DTR. Set to -1 if not used.
+
+    config MODEM_PWRKEY_PIN
+        int "Modem PWRKEY pin (power-on pulse)"
+        range -1 39
+        default 4
+        help
+            GPIO connected to modem PWRKEY. Set to -1 if your board doesnt have one.
+
+    config MODEM_POWERON_PIN
+        int "Modem main power switch pin"
+        range -1 39
+        default 12
+        help
+            GPIO that enables main power to the modem (e.g., DC boost). Set to -1 if always on.
+    
+    config MODEM_RESET_PIN
+        int "Modem RESET pin"
+        range -1 39
+        default 5
+        help
+            GPIO for resetting the modem. Set to -1 if not used.
+
+    config MODEM_RING_PIN
+        int "Modem RING pin (incoming call/data indicator)"
+        range -1 39
+        default 33
+        help
+            GPIO for RING signal. Set to -1 if not used.
+
+    config BOARD_ADC_PIN
+        int "ADC pin for battery voltage monitoring"
+        range -1 39
+        default 35
+        help
+            GPIO used to read battery voltage. Set to -1 if not used.
+
+    config BOARD_BAT_ADC_PIN
+        int "Alternate battery ADC pin (if different)"
+        range -1 39
+        default 35
+        help
+            Some boards use a separate ADC for battery. Set to -1 if same as BOARD_ADC_PIN.
+
+    config MODEM_RESET_LEVEL
+        int "Reset pin active level"
+        range 0 1
+        default 1
+        help
+            Set to 1 for active HIGH (pull high to reset), 0 for active LOW (pull low to reset).
+
+    config EXAMPLE_MODEM_PPP_APN
+        string "Set MODEM APN"
+        default "internet"
+        help
+            Set APN (Access Point Name), a logical name to choose data network
+
+    config EXAMPLE_NEED_SIM_PIN
+        bool "SIM PIN needed"
+        default n
+        help
+            Enable to set SIM PIN before starting the example
+
+    config EXAMPLE_SIM_PIN
+        string "Set SIM PIN"
+        default "1234"
+        depends on EXAMPLE_NEED_SIM_PIN
+        help
+            Pin to unlock the SIM
+endmenu
