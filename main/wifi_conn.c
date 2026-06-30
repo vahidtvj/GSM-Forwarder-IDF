@@ -10,6 +10,7 @@
 static const char *TAG = "wifi_conn";
 
 static EventGroupHandle_t s_wifi_event_group;
+static esp_netif_t *s_wifi_netif = NULL;
 static bool s_connected = false;
 
 #define WIFI_CONNECTED_BIT BIT0
@@ -37,6 +38,11 @@ bool wifi_conn_is_connected(void)
     return s_connected;
 }
 
+esp_netif_t *wifi_conn_get_netif(void)
+{
+    return s_wifi_netif;
+}
+
 esp_err_t wifi_conn_start(void)
 {
     if (strlen(CONFIG_WIFI_SSID) == 0) {
@@ -46,7 +52,7 @@ esp_err_t wifi_conn_start(void)
 
     s_wifi_event_group = xEventGroupCreate();
 
-    esp_netif_create_default_wifi_sta();
+    s_wifi_netif = esp_netif_create_default_wifi_sta();
 
     wifi_init_config_t cfg = WIFI_INIT_CONFIG_DEFAULT();
     ESP_ERROR_CHECK(esp_wifi_init(&cfg));

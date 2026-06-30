@@ -10,16 +10,17 @@
 #include "modem_power.h"
 #include "wifi_conn.h"
 #include "cellular_conn.h"
+#include "http_test.h"
 
 static const char *TAG = "step1_test";
 
+/* Plain HTTP (no TLS) on purpose for this test, to keep things simple
+ * while validating raw connectivity — swap to an HTTPS URL once TLS
+ * over PPP needs verifying too. */
+#define TEST_URL "http://api.ipify.org/"
+
 void app_main(void)
 {
-    /* Temporary: see raw AT command traffic while debugging cellular bring-up.
-     * Wildcard so we don't have to guess esp_modem's internal tag names.
-     * Remove / lower once the modem link is confirmed working. */
-    esp_log_level_set("*", ESP_LOG_DEBUG);
-
     ESP_LOGI(TAG, "=== Step 1: power-on + independent WiFi / cellular test ===");
 
     esp_err_t ret = nvs_flash_init();
@@ -37,6 +38,12 @@ void app_main(void)
     esp_err_t wifi_result = wifi_conn_start();
     ESP_LOGI(TAG, "WiFi result: %s", esp_err_to_name(wifi_result));
 
+    if (wifi_result == ESP_OK) {
+        ESP_LOGI(TAG, "--- Testing GET over WiFi ---");
+        esp_err_t get_err = http_test_get(TEST_URL, wifi_conn_get_netif());
+        ESP_LOGI(TAG, "WiFi GET result: %s", esp_err_to_name(get_err));
+    }
+
     /* --- Modem power-on + cellular test --- */
     ESP_LOGI(TAG, "--- Powering on modem ---");
     modem_power_on();
@@ -44,6 +51,12 @@ void app_main(void)
     ESP_LOGI(TAG, "--- Testing cellular (PPP) ---");
     esp_err_t cell_result = cellular_conn_start();
     ESP_LOGI(TAG, "Cellular result: %s", esp_err_to_name(cell_result));
+
+    if (cell_result == ESP_OK) {
+        ESP_LOGI(TAG, "--- Testing GET over cellular ---");
+        esp_err_t get_err = http_test_get(TEST_URL, cellular_conn_get_netif());
+        ESP_LOGI(TAG, "Cellular GET result: %s", esp_err_to_name(get_err));
+    }
 
     ESP_LOGI(TAG, "=== Step 1 summary ===");
     ESP_LOGI(TAG, "WiFi:     %s", wifi_conn_is_connected() ? "ONLINE" : "offline");

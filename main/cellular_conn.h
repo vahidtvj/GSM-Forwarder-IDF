@@ -1,5 +1,6 @@
 #pragma once
 #include "esp_err.h"
+#include "esp_netif.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -19,6 +20,9 @@ esp_err_t cellular_conn_start(void);
 
 /** Returns true if the PPP link currently holds a valid IP address. */
 bool cellular_conn_is_connected(void);
+
+/** Returns the PPP esp_netif handle (NULL until cellular_conn_start() runs). */
+esp_netif_t *cellular_conn_get_netif(void);
 
 /** Tears down the PPP session and releases the modem (e.g. before sleep). */
 void cellular_conn_stop(void);

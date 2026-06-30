@@ -1,5 +1,6 @@
 #pragma once
 #include "esp_err.h"
+#include "esp_netif.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -19,6 +20,9 @@ esp_err_t wifi_conn_start(void);
 
 /** Returns true if WiFi currently holds a valid IP address. */
 bool wifi_conn_is_connected(void);
+
+/** Returns the WiFi STA esp_netif handle (NULL until wifi_conn_start() runs). */
+esp_netif_t *wifi_conn_get_netif(void);
 
 #ifdef __cplusplus
 }

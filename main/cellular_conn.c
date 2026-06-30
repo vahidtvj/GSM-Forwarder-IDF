@@ -59,6 +59,11 @@ bool cellular_conn_is_connected(void)
     return s_connected;
 }
 
+esp_netif_t *cellular_conn_get_netif(void)
+{
+    return s_ppp_netif;
+}
+
 esp_err_t cellular_conn_start(void)
 {
     s_ppp_event_group = xEventGroupCreate();
