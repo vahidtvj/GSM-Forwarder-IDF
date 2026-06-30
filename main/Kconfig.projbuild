@@ -76,22 +76,34 @@ menu "Modem Configuration"
         help
             Set to 1 for active HIGH (pull high to reset), 0 for active LOW (pull low to reset).
 
-    config EXAMPLE_MODEM_PPP_APN
+    config MODEM_PPP_APN
         string "Set MODEM APN"
         default "internet"
         help
             Set APN (Access Point Name), a logical name to choose data network
 
-    config EXAMPLE_NEED_SIM_PIN
+    config NEED_SIM_PIN
         bool "SIM PIN needed"
         default n
         help
             Enable to set SIM PIN before starting the example
 
-    config EXAMPLE_SIM_PIN
+    config SIM_PIN
         string "Set SIM PIN"
         default "1234"
-        depends on EXAMPLE_NEED_SIM_PIN
+        depends on NEED_SIM_PIN
         help
             Pin to unlock the SIM
+
+    config WIFI_SSID
+        string "WiFi SSID"
+        default "SSID"
+
+    config WIFI_PASSWORD
+        string "WiFi Password"
+        default "PASS"
+
+    config WIFI_CONNECT_TIMEOUT_MS
+        int "WiFi connection timeout"
+        default 10000
 endmenu

@@ -5,7 +5,7 @@
   "idf.openOcdConfigs": [
     "board/esp32-wrover-kit-3.3v.cfg"
   ],
-  "idf.port": "detect",
+  "idf.port": "/dev/ttyACM0",
   "idf.toolsPath": "/home/vahid/.espressif",
   "idf.customExtraVars": {
     "IDF_TARGET": "esp32"
@@ -15,5 +15,6 @@
     "--background-index",
     "--query-driver=**",
     "--compile-commands-dir=/home/vahid/Documents/PROJ/Personal/GSMIDF/GSF-Forwarder-IDF/build"
-  ]
+  ],
+  "idf.flashType": "UART"
 }
