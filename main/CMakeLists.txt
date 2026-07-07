@@ -1,9 +1,7 @@
 idf_component_register(SRCS "main.c"
                              "modem_power.c"
-                             "wifi_conn.c"
-                             "cellular_conn.c"
-                             "http_test.c"
                        INCLUDE_DIRS "."
+                       REQUIRES network_manager
                        PRIV_REQUIRES nvs_flash
                                      esp_wifi
                                      esp_netif

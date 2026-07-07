@@ -26,6 +26,6 @@ dependencies:
 direct_dependencies:
 - espressif/esp_modem
 - espressif/led_strip
-manifest_hash: 74499774a23541279e6f5582f39adde2672ded1e89ac69671d679648f8e26aa5
+manifest_hash: 45b182876e0b897a2f5451b4c460fc5b2c2135fbd922dc36913327ca06222c6e
 target: esp32
 version: 3.0.0
