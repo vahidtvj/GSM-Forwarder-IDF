@@ -16,5 +16,6 @@
     "--query-driver=**",
     "--compile-commands-dir=/home/vahid/Documents/PROJ/Personal/GSMIDF/GSF-Forwarder-IDF/build"
   ],
-  "idf.flashType": "UART"
+  "idf.flashType": "UART",
+  "idf.currentSetup": "/home/vahid/.espressif/v6.0.2/esp-idf"
 }

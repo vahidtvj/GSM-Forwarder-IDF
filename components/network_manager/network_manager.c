@@ -40,14 +40,22 @@ static EventGroupHandle_t s_net_events = NULL;
 static volatile network_state_t s_state = NET_STATE_DISCONNECTED;
 static volatile network_iface_t s_active_iface = NET_IF_NONE;
 
-static network_event_cb_t s_user_cb = NULL;
-static void *s_user_ctx = NULL;
+#define NETWORK_MANAGER_MAX_SUBSCRIBERS 4
+
+typedef struct {
+    network_event_cb_t cb;
+    void *ctx;
+} event_subscriber_t;
+
+static event_subscriber_t s_subscribers[NETWORK_MANAGER_MAX_SUBSCRIBERS];
 
 static void fire_event(network_event_t event, network_iface_t iface)
 {
-    if (s_user_cb) {
-        network_event_data_t data = { .event = event, .iface = iface };
-        s_user_cb(&data, s_user_ctx);
+    network_event_data_t data = { .event = event, .iface = iface };
+    for (int i = 0; i < NETWORK_MANAGER_MAX_SUBSCRIBERS; i++) {
+        if (s_subscribers[i].cb) {
+            s_subscribers[i].cb(&data, s_subscribers[i].ctx);
+        }
     }
 }
 
@@ -190,7 +198,20 @@ static esp_err_t modem_enter_command_mode(void)
                                                    : ESP_MODEM_FLOW_CONTROL_NONE;
         dte_config.uart_config.baud_rate = s_cfg.cellular.baud_rate;
 
+        ESP_LOGI(TAG, "Creating modem DCE: tx=%d rx=%d rts=%d cts=%d baud=%lu",
+                 s_cfg.cellular.uart_tx_pin, s_cfg.cellular.uart_rx_pin,
+                 s_cfg.cellular.uart_rts_pin, s_cfg.cellular.uart_cts_pin,
+                 (unsigned long)s_cfg.cellular.baud_rate);
+
         esp_modem_dce_config_t dce_config = ESP_MODEM_DCE_DEFAULT_CONFIG(s_cfg.cellular.apn);
+        /* NOTE: field name for the URC callback varies slightly between
+         * esp_modem versions (some call it `urc_handler`, others wire it via
+         * a separate esp_modem_set_urc_cb-style call). Check
+         * esp_modem_dce_config.h for your pinned version if this doesn't
+         * compile as-is. */
+        if (s_cfg.cellular.urc_handler) {
+            dce_config.urc_handler = s_cfg.cellular.urc_handler;
+        }
 
         /* A7670 shares SIMCOM's SIM7600 AT command set closely enough that
          * esp_modem's SIM7600 profile works for it. If you swap to a modem
@@ -200,6 +221,14 @@ static esp_err_t modem_enter_command_mode(void)
         if (s_dce == NULL) {
             ESP_LOGE(TAG, "Failed to create modem DCE");
             return ESP_FAIL;
+        }
+
+        esp_err_t sync_err = esp_modem_sync(s_dce);
+        if (sync_err != ESP_OK) {
+            ESP_LOGE(TAG, "Modem not responding to AT sync (%s) - check power/wiring/pins",
+                     esp_err_to_name(sync_err));
+        } else {
+            ESP_LOGI(TAG, "Modem responded to AT sync OK");
         }
         return ESP_OK;
     }
@@ -219,7 +248,10 @@ static bool connect_cellular(uint32_t timeout_ms)
     }
 
     for (uint8_t attempt = 0; attempt <= s_cfg.cellular.connect_retry_count; attempt++) {
+        ESP_LOGI(TAG, "Cellular connect attempt %d/%d", attempt + 1, s_cfg.cellular.connect_retry_count + 1);
+
         if (modem_enter_command_mode() != ESP_OK) {
+            ESP_LOGW(TAG, "Modem failed to enter command mode (attempt %d)", attempt + 1);
             continue;
         }
 
@@ -236,7 +268,10 @@ static bool connect_cellular(uint32_t timeout_ms)
         xEventGroupClearBits(s_net_events, BIT_PPP_CONNECTED | BIT_PPP_FAIL);
         s_state = NET_STATE_CONNECTING;
 
-        if (esp_modem_set_mode(s_dce, ESP_MODEM_MODE_DATA) != ESP_OK) {
+        esp_err_t mode_err = esp_modem_set_mode(s_dce, ESP_MODEM_MODE_DATA);
+        if (mode_err != ESP_OK) {
+            ESP_LOGW(TAG, "esp_modem_set_mode(DATA) failed: %s (attempt %d) - modem may be unresponsive/unpowered",
+                     esp_err_to_name(mode_err), attempt + 1);
             continue;
         }
 
@@ -246,6 +281,7 @@ static bool connect_cellular(uint32_t timeout_ms)
             ok = true;
             break;
         }
+        ESP_LOGW(TAG, "PPP did not come up within %lu ms (attempt %d)", (unsigned long)timeout_ms, attempt + 1);
 
         esp_modem_set_mode(s_dce, ESP_MODEM_MODE_COMMAND);
     }
@@ -394,10 +430,17 @@ int network_manager_get_signal_quality(void)
     return rssi;
 }
 
-void network_manager_register_event_cb(network_event_cb_t cb, void *ctx)
+esp_err_t network_manager_register_event_cb(network_event_cb_t cb, void *ctx)
 {
-    s_user_cb = cb;
-    s_user_ctx = ctx;
+    for (int i = 0; i < NETWORK_MANAGER_MAX_SUBSCRIBERS; i++) {
+        if (s_subscribers[i].cb == NULL) {
+            s_subscribers[i].cb = cb;
+            s_subscribers[i].ctx = ctx;
+            return ESP_OK;
+        }
+    }
+    ESP_LOGE(TAG, "No free event subscriber slots (max %d)", NETWORK_MANAGER_MAX_SUBSCRIBERS);
+    return ESP_ERR_NO_MEM;
 }
 
 esp_err_t network_manager_modem_lock(TickType_t timeout)

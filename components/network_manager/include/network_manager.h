@@ -1,6 +1,7 @@
 #pragma once
 
 #include <stdbool.h>
+#include <stddef.h>
 #include <stdint.h>
 
 #include "esp_err.h"
@@ -65,6 +66,13 @@ typedef struct {
 
     uint8_t connect_retry_count;
     uint32_t connect_timeout_ms;
+
+    /* Optional: receives raw unsolicited response lines from the modem
+     * (e.g. "+CMTI: ...") whenever it's in command mode. NULL if not needed.
+     * Runs in esp_modem's internal context - must be fast, non-blocking, and
+     * must not itself issue AT commands (post to a queue instead). Set this
+     * before calling network_manager_init(); it can't be changed afterwards. */
+    esp_err_t (*urc_handler)(uint8_t *data, size_t len);
 } cellular_config_t;
 
 typedef struct {
@@ -103,7 +111,8 @@ void network_manager_set_wifi_always_on(bool always_on);
 /* Cellular signal quality (RSSI in dBm), or INT32_MIN if unavailable. */
 int network_manager_get_signal_quality(void);
 
-void network_manager_register_event_cb(network_event_cb_t cb, void *ctx);
+/* Returns ESP_ERR_NO_MEM if the subscriber slots (currently 4) are full. */
+esp_err_t network_manager_register_event_cb(network_event_cb_t cb, void *ctx);
 
 /* -------------------------------------------------------------------------
  * Shared modem access

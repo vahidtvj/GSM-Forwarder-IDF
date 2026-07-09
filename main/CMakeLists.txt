@@ -1,4 +1,4 @@
-idf_component_register(SRCS "main.c"
+idf_component_register(SRCS "http_client.c" "main.c"
                              "modem_power.c"
                        INCLUDE_DIRS "."
                        REQUIRES network_manager

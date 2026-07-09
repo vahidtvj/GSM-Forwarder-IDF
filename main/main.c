@@ -10,6 +10,7 @@
 #include "network_manager.h"
 #include "esp_http_client.h"
 #include "modem_power.h"
+#include "cJSON.h"
 
 // static void modem_power_on(void) {
 //     gpio_set_level(CONFIG_MODEM_POWERON_PIN, 1);
