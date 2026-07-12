@@ -1,7 +1,31 @@
-CONFIG_BLINK_LED_GPIO=y
-CONFIG_BLINK_GPIO=8
-
-# Required for esp_netif PPP support (ESP_NETIF_DEFAULT_PPP) used by cellular_conn.c
+# -----------------------------------------------------------------------
+# Cellular (PPP)
+# -----------------------------------------------------------------------
 CONFIG_LWIP_PPP_SUPPORT=y
 CONFIG_LWIP_PPP_PAP_SUPPORT=y
 CONFIG_LWIP_PPP_CHAP_SUPPORT=y
+
+# -----------------------------------------------------------------------
+# TLS / mbedTLS - lets esp_crt_bundle_attach() (used by http_client.c for
+# any https:// URL) verify against Mozilla's shipped root CA bundle instead
+# of you having to embed a specific server cert.
+# -----------------------------------------------------------------------
+CONFIG_MBEDTLS_CERTIFICATE_BUNDLE=y
+CONFIG_MBEDTLS_CERTIFICATE_BUNDLE_DEFAULT_FULL=y
+
+# This device only ever makes outbound TLS connections (esp_http_client) -
+# it never terminates TLS as a server, so drop that code/RAM.
+CONFIG_MBEDTLS_TLS_SERVER=n
+
+# Hardware-accelerated crypto - noticeably speeds up the TLS handshake and
+# reduces CPU time spent per request on the ESP32's crypto peripherals.
+CONFIG_MBEDTLS_HARDWARE_AES=y
+CONFIG_MBEDTLS_HARDWARE_MPI=y
+CONFIG_MBEDTLS_HARDWARE_SHA=y
+
+# -----------------------------------------------------------------------
+# Headroom - TLS handshakes (mbedTLS needs a fair amount of stack) plus PPP
+# plus cJSON on top of the default main task stack; bump it so a deep call
+# chain during a request doesn't overflow silently.
+# -----------------------------------------------------------------------
+CONFIG_ESP_MAIN_TASK_STACK_SIZE=8192

@@ -101,7 +101,7 @@ void check_public_ip(void)
 
     char resp[64];
     int status = 0;
-    esp_err_t err = http_request("https://cloudflare.com", NULL, resp, sizeof(resp), &status);
+    esp_err_t err = http_request("https://example.com", NULL, resp, sizeof(resp), &status);
 
     if (err == ESP_OK) {
         ESP_LOGI(TAG, "Status = %d, IP = %s", status, resp);
