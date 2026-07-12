@@ -1,14 +1,18 @@
 #include <string.h>
 #include <stdlib.h>
 
-#include "http_client.h"
+#include "web_client.h"
 
 #include "esp_crt_bundle.h"
 #include "esp_heap_caps.h"
 #include "esp_http_client.h"
 #include "esp_log.h"
 
-static const char *TAG = "http_client";
+#include "esp_netif_sntp.h"
+#include "esp_sntp.h"
+#include <time.h>
+
+static const char *TAG = "web_client";
 
 #define HTTP_DYN_INITIAL_CAPACITY 512
 #define HTTP_DYN_HEAP_SAFETY_MARGIN (32 * 1024) /* always keep this much free */
@@ -201,4 +205,29 @@ esp_err_t http_request_dynamic(const char *url, const char *post_data,
         *response_len_out = ctx.len;
     }
     return err;
+}
+
+static bool s_time_synced = false;
+
+bool web_client_time_sync_wait(uint32_t timeout_ms)
+{
+    if (s_time_synced) {
+        return true;
+    }
+    esp_sntp_config_t config = ESP_NETIF_SNTP_DEFAULT_CONFIG("pool.ntp.org");
+    esp_netif_sntp_init(&config);
+
+    if (esp_netif_sntp_sync_wait(pdMS_TO_TICKS(timeout_ms)) == ESP_OK) {
+        time_t now = time(NULL);
+        ESP_LOGI(TAG, "Time synced: %s", ctime(&now));
+        s_time_synced = true;
+    } else {
+        ESP_LOGW(TAG, "Time sync failed/timed out");
+    }
+    return s_time_synced;
+}
+
+void web_client_time_sync_reset(void)
+{
+    s_time_synced = false;
 }

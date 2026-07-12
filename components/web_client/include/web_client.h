@@ -1,6 +1,7 @@
 #pragma once
 
 #include <stddef.h>
+#include <stdbool.h>
 #include "esp_err.h"
 
 #ifdef __cplusplus
@@ -48,6 +49,16 @@ esp_err_t http_request(const char *url, const char *post_data,
 esp_err_t http_request_dynamic(const char *url, const char *post_data,
                                 char **response_out, size_t *response_len_out,
                                 int *status_code_out, size_t max_response_size);
+
+                                
+/* Starts SNTP (if not already synced) and blocks up to timeout_ms waiting
+ * for sync. Safe to call repeatedly - a no-op once synced. Returns true on
+ * success. */
+bool web_client_time_sync_wait(uint32_t timeout_ms);
+
+/* Resets internal "already synced" state - mainly for tests that want to
+ * force a fresh sync attempt. */
+void web_client_time_sync_reset(void);
 
 #ifdef __cplusplus
 }

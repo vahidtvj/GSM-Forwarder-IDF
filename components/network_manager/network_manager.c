@@ -391,6 +391,29 @@ bool network_manager_connect(uint32_t timeout_ms)
                                  : timeout_ms);
 }
 
+esp_err_t network_manager_connect_iface(network_iface_t iface, uint32_t timeout_ms)
+{
+    if (!s_initialized) {
+        return ESP_ERR_INVALID_STATE;
+    }
+    if (iface != NET_IF_WIFI && iface != NET_IF_CELLULAR) {
+        return ESP_ERR_INVALID_ARG;
+    }
+    if (s_state == NET_STATE_CONNECTED) {
+        if (s_active_iface == iface) {
+            return ESP_OK;
+        }
+        network_manager_disconnect();
+    }
+
+    bool ok = (iface == NET_IF_WIFI)
+                  ? connect_wifi(timeout_ms)
+                  : connect_cellular(s_cfg.cellular.connect_timeout_ms
+                                          ? s_cfg.cellular.connect_timeout_ms
+                                          : timeout_ms);
+    return ok ? ESP_OK : ESP_FAIL;
+}
+
 void network_manager_disconnect(void)
 {
     if (s_active_iface == NET_IF_WIFI) {

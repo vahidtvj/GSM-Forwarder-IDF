@@ -1,0 +1,21 @@
+# Cellular (PPP) - needed for cellular GET tests
+CONFIG_LWIP_PPP_SUPPORT=y
+CONFIG_LWIP_PPP_PAP_SUPPORT=y
+CONFIG_LWIP_PPP_CHAP_SUPPORT=y
+
+# TLS - needed for https:// GET tests
+CONFIG_MBEDTLS_CERTIFICATE_BUNDLE=y
+CONFIG_MBEDTLS_CERTIFICATE_BUNDLE_DEFAULT_FULL=y
+CONFIG_MBEDTLS_TLS_SERVER=n
+CONFIG_MBEDTLS_HARDWARE_AES=y
+CONFIG_MBEDTLS_HARDWARE_MPI=y
+CONFIG_MBEDTLS_HARDWARE_SHA=y
+
+# network_manager_init() calls esp_modem_set_urc() whenever
+# cellular_config_t.urc_handler is non-NULL, but silently warns and skips it
+# if this isn't enabled (see network_manager.c). Root project's
+# sdkconfig.defaults never turned this on either - worth adding there too.
+CONFIG_ESP_MODEM_URC_HANDLER=y
+
+# Headroom: TLS handshake + PPP + Unity test runner task stacks
+CONFIG_ESP_MAIN_TASK_STACK_SIZE=8192

@@ -99,6 +99,11 @@ esp_err_t network_manager_init(const network_manager_config_t *config);
  * Returns true if a connection was established. */
 bool network_manager_connect(uint32_t timeout_ms);
 
+/* Connects only the specified interface — no fallback. iface must be
+ * NET_IF_WIFI or NET_IF_CELLULAR. Disconnects the other iface first if
+ * it's currently active. For testing / explicit iface selection. */
+esp_err_t network_manager_connect_iface(network_iface_t iface, uint32_t timeout_ms);
+
 /* Tears down the active connection. Wifi: disconnects unless always_on.
  * Cellular: drops PPP and returns the modem to command mode. */
 void network_manager_disconnect(void);

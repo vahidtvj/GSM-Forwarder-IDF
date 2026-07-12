@@ -11,7 +11,7 @@
 #include "esp_http_client.h"
 #include "modem_power.h"
 #include "cJSON.h"
-#include "http_client.h"
+#include "web_client.h"
 
 #include "esp_netif_sntp.h"
 #include "esp_sntp.h"
@@ -97,8 +97,8 @@ void check_public_ip(void)
         return;
     }
 
-    sync_time_if_needed(); 
-
+    web_client_time_sync_wait(10000);
+    
     char resp[64];
     int status = 0;
     esp_err_t err = http_request("https://example.com", NULL, resp, sizeof(resp), &status);

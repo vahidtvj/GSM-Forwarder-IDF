@@ -1,0 +1,35 @@
+menu "Test Config"
+    config TEST_WIFI_SSID
+        string "Test WiFi SSID"
+        default "SSID"
+    config TEST_WIFI_PASSWORD
+        string "Test WiFi Password"
+        default "PASS"
+    config MODEM_TX_PIN
+        int "Modem TX pin"
+        default 26
+    config MODEM_RX_PIN
+        int "Modem RX pin"
+        default 27
+    config MODEM_DTR_PIN
+        int "Modem DTR pin"
+        default 25
+    config MODEM_PWRKEY_PIN
+        int "Modem PWRKEY pin"
+        default 4
+    config MODEM_POWERON_PIN
+        int "Modem power switch pin"
+        default 12
+    config MODEM_RESET_PIN
+        int "Modem RESET pin"
+        default 5
+    config MODEM_RESET_LEVEL
+        int "Reset active level"
+        default 1
+    config MODEM_BAUDRATE
+        int "Modem baud rate"
+        default 115200
+    config MODEM_PPP_APN
+        string "APN"
+        default "internet"
+endmenu

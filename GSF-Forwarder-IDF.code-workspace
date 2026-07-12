@@ -1,0 +1,12 @@
+{
+	"folders": [
+		{
+			"name": "GSF-Forwarder",
+			"path": "."
+		},
+		{
+			"name": "Test App",
+			"path": "test_app"
+		}
+	]
+}
