@@ -1,7 +1,8 @@
-idf_component_register(SRCS "http_client.c" "main.c"
+idf_component_register(SRCS  "main.c"
                              "modem_power.c"
+                             "http_client.c"
                        INCLUDE_DIRS "."
-                       REQUIRES network_manager
+                       REQUIRES network_manager esp_http_client esp-tls mbedtls
                        PRIV_REQUIRES nvs_flash
                                      esp_wifi
                                      esp_netif

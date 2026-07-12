@@ -11,15 +11,32 @@
 #include "esp_http_client.h"
 #include "modem_power.h"
 #include "cJSON.h"
+#include "http_client.h"
 
-// static void modem_power_on(void) {
-//     gpio_set_level(CONFIG_MODEM_POWERON_PIN, 1);
-//     gpio_set_level(CONFIG_MODEM_PWRKEY_PIN, 0);
-//     vTaskDelay(pdMS_TO_TICKS(100));
-//     gpio_set_level(CONFIG_MODEM_PWRKEY_PIN, 1);
-//     vTaskDelay(pdMS_TO_TICKS(1000));
-//     gpio_set_level(CONFIG_MODEM_PWRKEY_PIN, 0);
-// }
+#include "esp_netif_sntp.h"
+#include "esp_sntp.h"
+#include <time.h>
+
+static const char *TAG = "main";
+
+static bool s_time_synced = false;
+
+static void sync_time_if_needed(void)
+{
+    if (s_time_synced) {
+        return;
+    }
+    esp_sntp_config_t config = ESP_NETIF_SNTP_DEFAULT_CONFIG("pool.ntp.org");
+    esp_netif_sntp_init(&config);
+
+    if (esp_netif_sntp_sync_wait(pdMS_TO_TICKS(10000)) == ESP_OK) {
+        time_t now = time(NULL);
+        ESP_LOGI(TAG, "Time synced: %s", ctime(&now));
+        s_time_synced = true;
+    } else {
+        ESP_LOGW(TAG, "Time sync failed/timed out - HTTPS cert checks may fail");
+    }
+}
 
 static void modem_power_off(void) {
     gpio_set_level(CONFIG_MODEM_POWERON_PIN, 0);
@@ -32,8 +49,8 @@ static void on_net_event(const network_event_data_t *e, void *ctx) {
 
 network_manager_config_t cfg = {
     .wifi = {
-        .ssid = "aasdasdasd",
-        .password = "wrongpass",
+        .ssid = CONFIG_WIFI_SSID,
+        .password = CONFIG_WIFI_PASSWORD,
         .always_on = false,
         .connect_timeout_ms = 8000,
     },
@@ -52,8 +69,6 @@ network_manager_config_t cfg = {
         .connect_timeout_ms = 30000,
     },
 };
-
-static const char *TAG = "ip_check";
 
 static char s_ip_response[64] = {0};
 static int  s_ip_response_len = 0;
@@ -74,6 +89,7 @@ static esp_err_t http_event_handler(esp_http_client_event_t *evt)
     return ESP_OK;
 }
 
+
 void check_public_ip(void)
 {
     if (!network_manager_connect(15000)) {
@@ -81,26 +97,18 @@ void check_public_ip(void)
         return;
     }
 
-    s_ip_response_len = 0;
-    s_ip_response[0] = '\0';
+    sync_time_if_needed(); 
 
-    esp_http_client_config_t config = {
-        .url = "http://api.ipify.org",
-        .event_handler = http_event_handler,
-        // .crt_bundle_attach = esp_crt_bundle_attach,
-        .timeout_ms = 10000,
-    };
-    esp_http_client_handle_t client = esp_http_client_init(&config);
+    char resp[64];
+    int status = 0;
+    esp_err_t err = http_request("https://cloudflare.com", NULL, resp, sizeof(resp), &status);
 
-    esp_err_t err = esp_http_client_perform(client);
     if (err == ESP_OK) {
-        ESP_LOGI(TAG, "Status = %d, IP = %s",
-                 esp_http_client_get_status_code(client), s_ip_response);
+        ESP_LOGI(TAG, "Status = %d, IP = %s", status, resp);
     } else {
         ESP_LOGE(TAG, "GET failed: %s", esp_err_to_name(err));
     }
 
-    esp_http_client_cleanup(client);
     network_manager_disconnect();
 }
 
@@ -116,7 +124,7 @@ void app_main(void)
     ESP_ERROR_CHECK(ret);
 
     network_manager_init(&cfg);
-network_manager_register_event_cb(on_net_event, NULL);
+    network_manager_register_event_cb(on_net_event, NULL);
     check_public_ip();
 
     // while (1) {

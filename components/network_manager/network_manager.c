@@ -204,14 +204,6 @@ static esp_err_t modem_enter_command_mode(void)
                  (unsigned long)s_cfg.cellular.baud_rate);
 
         esp_modem_dce_config_t dce_config = ESP_MODEM_DCE_DEFAULT_CONFIG(s_cfg.cellular.apn);
-        /* NOTE: field name for the URC callback varies slightly between
-         * esp_modem versions (some call it `urc_handler`, others wire it via
-         * a separate esp_modem_set_urc_cb-style call). Check
-         * esp_modem_dce_config.h for your pinned version if this doesn't
-         * compile as-is. */
-        if (s_cfg.cellular.urc_handler) {
-            dce_config.urc_handler = s_cfg.cellular.urc_handler;
-        }
 
         /* A7670 shares SIMCOM's SIM7600 AT command set closely enough that
          * esp_modem's SIM7600 profile works for it. If you swap to a modem
@@ -221,6 +213,19 @@ static esp_err_t modem_enter_command_mode(void)
         if (s_dce == NULL) {
             ESP_LOGE(TAG, "Failed to create modem DCE");
             return ESP_FAIL;
+        }
+
+        if (s_cfg.cellular.urc_handler) {
+#ifdef CONFIG_ESP_MODEM_URC_HANDLER
+            esp_err_t urc_err = esp_modem_set_urc(s_dce, s_cfg.cellular.urc_handler);
+            if (urc_err != ESP_OK) {
+                ESP_LOGW(TAG, "Failed to register URC handler: %s", esp_err_to_name(urc_err));
+            }
+#else
+            ESP_LOGW(TAG, "urc_handler set in config, but CONFIG_ESP_MODEM_URC_HANDLER is "
+                          "not enabled - run 'idf.py menuconfig' -> Component config -> "
+                          "ESP-MODEM -> enable URC handler support");
+#endif
         }
 
         esp_err_t sync_err = esp_modem_sync(s_dce);
