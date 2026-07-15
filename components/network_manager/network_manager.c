@@ -238,7 +238,11 @@ static esp_err_t modem_enter_command_mode(void)
         return ESP_OK;
     }
 
-    return esp_modem_set_mode(s_dce, ESP_MODEM_MODE_COMMAND);
+    esp_err_t err = esp_modem_set_mode(s_dce, ESP_MODEM_MODE_COMMAND);
+    if (err != ESP_OK) {
+        vTaskDelay(pdMS_TO_TICKS(500));
+    }
+    return err;
 }
 
 static bool connect_cellular(uint32_t timeout_ms)
@@ -277,6 +281,7 @@ static bool connect_cellular(uint32_t timeout_ms)
         if (mode_err != ESP_OK) {
             ESP_LOGW(TAG, "esp_modem_set_mode(DATA) failed: %s (attempt %d) - modem may be unresponsive/unpowered",
                      esp_err_to_name(mode_err), attempt + 1);
+            vTaskDelay(pdMS_TO_TICKS(500));
             continue;
         }
 

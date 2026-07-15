@@ -19,3 +19,8 @@ CONFIG_ESP_MODEM_URC_HANDLER=y
 
 # Headroom: TLS handshake + PPP + Unity test runner task stacks
 CONFIG_ESP_MAIN_TASK_STACK_SIZE=8192
+
+# Idle tasks don't get CPU time while the Unity menu blocks on UART input
+# waiting for you to type a test tag - stop TWDT from monitoring them here.
+CONFIG_ESP_TASK_WDT_CHECK_IDLE_TASK_CPU0=n
+CONFIG_ESP_TASK_WDT_CHECK_IDLE_TASK_CPU1=n

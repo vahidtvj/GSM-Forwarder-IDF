@@ -19,7 +19,7 @@ network_manager_config_t test_default_config(void)
             .baud_rate = CONFIG_MODEM_BAUDRATE,
             .power_on = modem_power_on,
             .power_off = NULL,
-            .reset = NULL,
+            .reset = modem_hw_reset,
             .power_off_when_idle = false,
             .apn = CONFIG_MODEM_PPP_APN,
             .connect_retry_count = 2,
