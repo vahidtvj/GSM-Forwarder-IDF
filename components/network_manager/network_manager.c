@@ -29,6 +29,7 @@ static esp_netif_t *s_wifi_netif = NULL;
 static esp_netif_t *s_ppp_netif = NULL;
 
 static esp_modem_dce_t *s_dce = NULL;
+static bool s_dce_in_command_mode = false; /* tracks last mode we successfully set, since esp_modem's own return code for a redundant COMMAND->COMMAND call isn't reliable */
 static SemaphoreHandle_t s_modem_mutex = NULL;
 
 static EventGroupHandle_t s_net_events = NULL;
@@ -238,10 +239,16 @@ static esp_err_t modem_enter_command_mode(void)
         return ESP_OK;
     }
 
-    esp_err_t err = esp_modem_set_mode(s_dce, ESP_MODEM_MODE_COMMAND);
-    if (err != ESP_OK) {
-        vTaskDelay(pdMS_TO_TICKS(500));
+if (s_dce_in_command_mode) {
+        return ESP_OK; /* already there per our own bookkeeping */
     }
+    esp_err_t err = esp_modem_set_mode(s_dce, ESP_MODEM_MODE_COMMAND);
+    if (err == ESP_OK || err == ESP_ERR_INVALID_STATE) {
+        s_dce_in_command_mode = true;
+        return ESP_OK;
+    }
+    ESP_LOGW(TAG, "esp_modem_set_mode(COMMAND) failed: %s", esp_err_to_name(err));
+    vTaskDelay(pdMS_TO_TICKS(500));
     return err;
 }
 
@@ -284,6 +291,8 @@ static bool connect_cellular(uint32_t timeout_ms)
             vTaskDelay(pdMS_TO_TICKS(500));
             continue;
         }
+        else
+                s_dce_in_command_mode = false;
 
         EventBits_t bits = xEventGroupWaitBits(s_net_events, BIT_PPP_CONNECTED | BIT_PPP_FAIL,
                                                 pdFALSE, pdFALSE, pdMS_TO_TICKS(timeout_ms));
@@ -294,6 +303,7 @@ static bool connect_cellular(uint32_t timeout_ms)
         ESP_LOGW(TAG, "PPP did not come up within %lu ms (attempt %d)", (unsigned long)timeout_ms, attempt + 1);
 
         esp_modem_set_mode(s_dce, ESP_MODEM_MODE_COMMAND);
+        s_dce_in_command_mode = true;
     }
 
     if (!ok) {
@@ -317,7 +327,12 @@ static void disconnect_cellular(void)
         return;
     }
 
-    esp_modem_set_mode(s_dce, ESP_MODEM_MODE_COMMAND);
+    esp_err_t err = esp_modem_set_mode(s_dce, ESP_MODEM_MODE_COMMAND);
+    if (err != ESP_OK) {
+        ESP_LOGW(TAG, "PPP->COMMAND switch on disconnect failed: %s", esp_err_to_name(err));
+    }
+    s_dce_in_command_mode = true; /* regardless of err - we're not in DATA mode anymore either way */
+    vTaskDelay(pdMS_TO_TICKS(1200));
     s_state = NET_STATE_DISCONNECTED;
     s_active_iface = NET_IF_NONE;
 
