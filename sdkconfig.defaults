@@ -23,6 +23,12 @@ CONFIG_MBEDTLS_HARDWARE_AES=y
 CONFIG_MBEDTLS_HARDWARE_MPI=y
 CONFIG_MBEDTLS_HARDWARE_SHA=y
 
+# network_manager_init() calls esp_modem_set_urc() whenever
+# cellular_config_t.urc_handler is non-NULL, but silently warns and skips it
+# if this isn't enabled (see network_manager.c). Root project's
+# sdkconfig.defaults never turned this on either - worth adding there too.
+CONFIG_ESP_MODEM_URC_HANDLER=y
+
 # -----------------------------------------------------------------------
 # Headroom - TLS handshakes (mbedTLS needs a fair amount of stack) plus PPP
 # plus cJSON on top of the default main task stack; bump it so a deep call

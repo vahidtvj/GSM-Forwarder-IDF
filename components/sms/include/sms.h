@@ -12,6 +12,9 @@ typedef struct {
     char sender[24];
     char date[20];
     char *message;   /* heap-allocated, full reassembled text. Free() it after use. */
+    bool complete;         /* false if delivered early due to multipart timeout with gaps */
+    uint8_t parts_received;
+    uint8_t total_parts;
 } sms_message_t;
 
 typedef void (*sms_received_cb_t)(const sms_message_t *sms, void *ctx);
