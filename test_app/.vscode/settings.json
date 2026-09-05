@@ -1,5 +1,0 @@
-{
-    "idf.currentSetup": "/home/vahid/.espressif/v6.0.2/esp-idf",
-    "idf.flashType": "UART",
-    "idf.port": "/dev/ttyACM0"
-}
